@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>cross-zero</title>
+    <style>
+        table {
+            border-collapse: collapse;
+
+            border-style: hidden;
+        }
+
+        td {
+            width: 100px;
+            height: 100px;
+
+            cursor: pointer;
+            transition: background-color .2s ease-out;
+
+            border: 2px solid black;
+            background-color: #91e6f3;
+        }
+
+        td:hover {
+            background-color: cyan;
+        }
+
+        .val {
+            position: relative;
+        }
+
+        .val:before {
+            font-size: 80px;
+
+            position: absolute;
+            top: 8px;
+            left: 22px;
+
+            display: none;
+
+            content: '\2718';
+            pointer-events: none;
+
+            opacity: 0;
+        }
+
+        .val:after {
+            font-size: 100px;
+            font-weight: bold;
+
+            position: absolute;
+            top: -11px;
+            left: 18px;
+
+            display: none;
+
+            content: '\26AC';
+            pointer-events: none;
+
+            opacity: 0;
+        }
+
+        .current_x td:hover input:not([value]) + .val:before,
+        .current_o td:hover input:not([value]) + .val:after {
+            display: inline-block;
+
+            opacity: .2;
+        }
+
+        input[value='x'] + .val:before {
+            display: inline-block;
+
+            opacity: 1;
+        }
+
+        input[value='o'] + .val:after {
+            display: inline-block;
+
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+<button id="replay" onclick="replay()">Новая игра</button>
+<span id="final-status" class="status" value="">Ходит X</span>
+<table id="playing-field" class="current_x">
+    <tr>
+        <td><input type="text" hidden id="0-0"><span class="val"></span></td>
+        <td><input type="text" hidden id="0-1"><span class="val"></span></td>
+        <td><input type="text" hidden id="0-2"><span class="val"></span></td>
+    </tr>
+    <tr>
+        <td><input type="text" hidden id="1-0"><span class="val"></span></td>
+        <td><input type="text" hidden id="1-1"><span class="val"></span></td>
+        <td><input type="text" hidden id="1-2"><span class="val"></span></td>
+    </tr>
+    <tr>
+        <td><input type="text" hidden id="2-0"><span class="val"></span></td>
+        <td><input type="text" hidden id="2-1"><span class="val"></span></td>
+        <td><input type="text" hidden id="2-2"><span class="val"></span></td>
+    </tr>
+</table>
+<script>
+    const waysToWin = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8], // Горизонтали
+        [0, 3, 6], [1, 4, 7], [2, 5, 8], // Вертикали
+        [0, 4, 8], [2, 4, 6]             // Диагонали
+    ];
+
+    const playingField = document.getElementById('playing-field');
+    const finalStatus = document.getElementById('final-status');
+    let currentPlayer = 'x';
+    let canChangePlayer = true;
+    let movesCount = 0;
+
+    function getCellValue(row, column) {
+        const input = document.getElementById(row + '-' + column);
+
+        return input.value;
+    }
+
+    function getCellValueByIndex(index) {
+        return getCellValue(Math.trunc(index / 3), index % 3);
+    }
+
+    function getFinalStatus(movesCount) {
+        for (let way of waysToWin) {
+            let a = getCellValueByIndex(way[0]);
+            let b = getCellValueByIndex(way[1]);
+            let c = getCellValueByIndex(way[2]);
+
+            if (a === b && b === c && a) {
+                return a;
+            }
+        }
+
+        if (movesCount === 9) {
+            return 'draw';
+        }
+    }
+
+    function replay() {
+        for (let input of document.getElementsByTagName('input')) {
+            input.setAttribute('value', '');
+        }
+
+        playingField.setAttribute('class', 'current_x');
+        finalStatus.setAttribute('value', '');
+        finalStatus.innerText = 'Ходит X';
+        canChangePlayer = true;
+        currentPlayer = 'x';
+        movesCount = 0;
+    }
+
+    playingField.addEventListener('click', event => {
+        if (!canChangePlayer) {
+            return;
+        }
+        canChangePlayer = false;
+
+        const cell = event.target;
+        const hiddenInput = cell.getElementsByTagName('input')[0];
+
+        if (!hiddenInput.value) {
+            hiddenInput.setAttribute('value', currentPlayer);
+            currentPlayer = currentPlayer === 'x' ? 'o' : 'x';
+            playingField.setAttribute('class', 'current_' + currentPlayer);
+            finalStatus.innerText = `Ходит ${currentPlayer.toUpperCase()}`;
+            movesCount++;
+        }
+
+        canChangePlayer = true;
+
+        const status = getFinalStatus(movesCount);
+
+        if (status) {
+            finalStatus.innerText = status === 'draw' ? 'Ничья' : `Победа ${status}`;
+            finalStatus.setAttribute('value', status);
+            canChangePlayer = false;
+        }
+    });
+</script>
+</body>
+</html>
